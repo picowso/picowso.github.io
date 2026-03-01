@@ -48,68 +48,16 @@
   </div>
   <div class="articleBody">
     <h1 id="chess-content-incomming-dw">CHESS CONTENT INCOMMING DW!</h1>
-<h2 id="about">About</h2>
-<p>Mailcap files are a format documented in
-<a rel="external" href="https://www.rfc-editor.org/rfc/rfc1524.html">RFC 1524</a>, "A User Agent
-Configuration Mechanism For Multimedia Mail Format Information." They allow the
-handling of MIME types by software aware of those types. For example, a mailcap
-line of <code>text/html; qutebrowser '%s'; test=test -n "$DISPLAY"</code> would instruct
-the software to open any HTML file with qutebrowser if you are running a
-graphical session, with the file replacing the <code>'%s'</code>.</p>
-<p><code>mailcap</code> is a parsing library that looks at either a present <code>$MAILCAPS</code> env
-variable or cycles through the four paths where a mailcap file would be found in
-ascending order of importance: <code>/usr/local/etc/mailcap</code>, <code>/usr/etc/mailcap</code>,
-<code>/etc/mailcap</code>, and <code>$HOME/.mailcap</code>. It builds the mailcap from all available
-files, with duplicate entries being squashed with newer lines, allowing
-<code>$HOME/.mailcap</code> to be the final decider.</p>
-<p>The entries that make up the mailcap include only those that are relevant i.e.
-those that have passed the <code>test</code> field (if present). With the above <code>text/html</code>
-example, that test would fail if run through SSH, and unless another existing
-<code>text/html</code> entry (or <code>text/*</code>) exists that doesn't require a display server, no
-entry would exist for that mime type.</p>
-<h2 id="installation">Installation</h2>
-<p>Add the following to your <code>Cargo.toml</code>:</p>
-<pre><code data-lang="toml">[dependencies]
-mailcap = &quot;0.1.0&quot;
-</code></pre>
-<h2 id="usage">Usage</h2>
-<pre><code data-lang="rust">use mailcap::Mailcap;
-
-fn main() {
-    let cap = Mailcap::new().unwrap();
-    if let Some(i) = cap.get(&quot;text/html&quot;) {
-        let command = i.viewer(&quot;/var/www/index.html&quot;);
-        assert_eq!(command, &quot;qutebrowser &#39;/var/www/index.html&#39;&quot;);
-    }
-}
-</code></pre>
-<p>Wildcard fallbacks are also supported.</p>
-<pre><code data-lang="rust">use mailcap::Mailcap;
-
-fn main() {
-    let cap = Mailcap::new().unwrap();
-    if let Some(i) = cap.get(&quot;video/avi&quot;) {
-        // if no video/avi MIME entry available
-        let mime_type = i.mime();
-        assert_eq!(mime_type, &quot;video/*&quot;);
-    }
-}
-</code></pre>
-<p>Code documentation is <a rel="external" href="https://docs.rs/mailcap/latest/mailcap/">available here</a>.</p>
-<h2 id="roadmap">Roadmap</h2>
-<p>To-be-included features can be seen
-<a rel="external" href="https://todo.sr.ht/~savoy/mailcap?search=status%3Aopen+label%3Afeature">through the current open issues</a>.</p>
-<h2 id="support">Support</h2>
-<p>Refer to the
-<a rel="external" href="https://lists.sr.ht/~savoy/mailcap-announce">announcement mailing list</a> for
-project updates and the
-<a rel="external" href="https://lists.sr.ht/~savoy/mailcap-devel">devel mailing list</a> for contributions
-and collaboration.</p>
-<p>Issues should be directed to the project
-<a rel="external" href="https://todo.sr.ht/~savoy/mailcap">issue tracker</a>.</p>
-<h2 id="license">License</h2>
-<p>This project is licensed under the GPLv3.</p>
-
+<pre class="giallo" style="color: #F8F8F2; background-color: #282A36;"><code data-lang="cpp"><span class="giallo-l"><span style="color: #6272A4;">// king in check after the move?</span></span>
+<span class="giallo-l"><span style="color: #50FA7B;">movegen</span><span>(</span><span style="color: #FF79C6;">!</span><span>(i</span><span style="color: #FF79C6;">&amp;</span><span style="color: #BD93F9;">1</span><span>), i</span><span style="color: #FF79C6;">+</span><span style="color: #BD93F9;">1</span><span>);</span></span>
+<span class="giallo-l"><span>pos kg;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">for</span><span>(</span><span style="color: #FF79C6;">int</span><span> i </span><span style="color: #FF79C6;">=</span><span style="color: #BD93F9;"> 0</span><span> ; i </span><span style="color: #FF79C6;">&lt;</span><span style="color: #BD93F9;"> 8</span><span> ; i</span><span style="color: #FF79C6;">++</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    for</span><span>(</span><span style="color: #FF79C6;">int</span><span> j </span><span style="color: #FF79C6;">=</span><span style="color: #BD93F9;"> 0</span><span> ; j </span><span style="color: #FF79C6;">&lt;</span><span style="color: #BD93F9;"> 8</span><span> ; j</span><span style="color: #FF79C6;">++</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">        if</span><span>(Board[i][j].type</span><span style="color: #FF79C6;">%</span><span style="color: #BD93F9;">6</span><span style="color: #FF79C6;"> ==</span><span style="color: #BD93F9;"> 5</span><span style="color: #FF79C6;"> and</span><span> (Board[i][j].type</span><span style="color: #FF79C6;"> &lt;</span><span style="color: #BD93F9;"> 6</span><span>)</span><span style="color: #FF79C6;"> ==</span><span> i</span><span style="color: #FF79C6;">&amp;</span><span style="color: #BD93F9;">1</span><span>) {</span></span>
+<span class="giallo-l"><span>            kg </span><span style="color: #FF79C6;">=</span><span> {i, j};</span></span>
+<span class="giallo-l"><span>        }</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
   </div>
 </article>
 
