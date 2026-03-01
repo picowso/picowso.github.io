@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="description" content="A blog about (hobby) chess engines">
+  
+
+  <title> Picowso&#x27;s Blog </title>
+
+  
+  <link rel="stylesheet" href="https://picowso.github.io/theme.css">
+  
+  
+</head>
+
+<body>
+  <div class="content">
+    
+    
+    <header>
+      <div class="pull-right">
+        [<a href="https:&#x2F;&#x2F;picowso.github.io">homepage</a>]
+        [<a href="https:&#x2F;&#x2F;picowso.github.io">blog</a>]
+        [<a href="https:&#x2F;&#x2F;picowso.github.io/archive">archive</a>]
+        [<a href="https:&#x2F;&#x2F;picowso.github.io/atom.xml">rss</a>]
+        [<a href="">source</a>]
+      </div>
+      <div class="title">
+        <strong>Picowso&#x27;s Blog</strong>
+      </div>
+      <div class="subtitle">A blog about (hobby) chess engines</div>
+    </header>
+    
+
+    <main>
+      
+<article>
+  <div class="headline">
+    <h1>part I</h1>
+    <div class="border"></div>
+    <time datetime=" 2025-03-01" class="date" itemprop="datePublished">
+      01 Mar 2025
+    </time>
+  </div>
+  <div class="articleBody">
+    <h1 id="chess-content-incomming-dw">CHESS CONTENT INCOMMING DW!</h1>
+<h2 id="about">About</h2>
+<p>Mailcap files are a format documented in
+<a rel="external" href="https://www.rfc-editor.org/rfc/rfc1524.html">RFC 1524</a>, "A User Agent
+Configuration Mechanism For Multimedia Mail Format Information." They allow the
+handling of MIME types by software aware of those types. For example, a mailcap
+line of <code>text/html; qutebrowser '%s'; test=test -n "$DISPLAY"</code> would instruct
+the software to open any HTML file with qutebrowser if you are running a
+graphical session, with the file replacing the <code>'%s'</code>.</p>
+<p><code>mailcap</code> is a parsing library that looks at either a present <code>$MAILCAPS</code> env
+variable or cycles through the four paths where a mailcap file would be found in
+ascending order of importance: <code>/usr/local/etc/mailcap</code>, <code>/usr/etc/mailcap</code>,
+<code>/etc/mailcap</code>, and <code>$HOME/.mailcap</code>. It builds the mailcap from all available
+files, with duplicate entries being squashed with newer lines, allowing
+<code>$HOME/.mailcap</code> to be the final decider.</p>
+<p>The entries that make up the mailcap include only those that are relevant i.e.
+those that have passed the <code>test</code> field (if present). With the above <code>text/html</code>
+example, that test would fail if run through SSH, and unless another existing
+<code>text/html</code> entry (or <code>text/*</code>) exists that doesn't require a display server, no
+entry would exist for that mime type.</p>
+<h2 id="installation">Installation</h2>
+<p>Add the following to your <code>Cargo.toml</code>:</p>
+<pre><code data-lang="toml">[dependencies]
+mailcap = &quot;0.1.0&quot;
+</code></pre>
+<h2 id="usage">Usage</h2>
+<pre><code data-lang="rust">use mailcap::Mailcap;
+
+fn main() {
+    let cap = Mailcap::new().unwrap();
+    if let Some(i) = cap.get(&quot;text/html&quot;) {
+        let command = i.viewer(&quot;/var/www/index.html&quot;);
+        assert_eq!(command, &quot;qutebrowser &#39;/var/www/index.html&#39;&quot;);
+    }
+}
+</code></pre>
+<p>Wildcard fallbacks are also supported.</p>
+<pre><code data-lang="rust">use mailcap::Mailcap;
+
+fn main() {
+    let cap = Mailcap::new().unwrap();
+    if let Some(i) = cap.get(&quot;video/avi&quot;) {
+        // if no video/avi MIME entry available
+        let mime_type = i.mime();
+        assert_eq!(mime_type, &quot;video/*&quot;);
+    }
+}
+</code></pre>
+<p>Code documentation is <a rel="external" href="https://docs.rs/mailcap/latest/mailcap/">available here</a>.</p>
+<h2 id="roadmap">Roadmap</h2>
+<p>To-be-included features can be seen
+<a rel="external" href="https://todo.sr.ht/~savoy/mailcap?search=status%3Aopen+label%3Afeature">through the current open issues</a>.</p>
+<h2 id="support">Support</h2>
+<p>Refer to the
+<a rel="external" href="https://lists.sr.ht/~savoy/mailcap-announce">announcement mailing list</a> for
+project updates and the
+<a rel="external" href="https://lists.sr.ht/~savoy/mailcap-devel">devel mailing list</a> for contributions
+and collaboration.</p>
+<p>Issues should be directed to the project
+<a rel="external" href="https://todo.sr.ht/~savoy/mailcap">issue tracker</a>.</p>
+<h2 id="license">License</h2>
+<p>This project is licensed under the GPLv3.</p>
+
+  </div>
+</article>
+
+    </main>
+  </div>
+
+  <footer>
+    
+    <p>CCL <a href="https:&#x2F;&#x2F;picowso.github.io">Anass Zakar</a> &mdash; <a
+        href="mailto:"></a> | Powered by <a
+        href="https://www.getzola.org/">Zola</a> and the <a href="https://git.sr.ht/~savoy/tilde">tilde</a> theme</p>
+    
+  </footer>
+
+  
+</body>
+
+
+</html>
