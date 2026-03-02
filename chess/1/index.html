@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="description" content="A blog about (hobby) chess engines">
+  
+
+  <title> Picowso&#x27;s Blog </title>
+
+  
+  <link rel="stylesheet" href="https://picowso.github.io/theme.css">
+  
+  
+</head>
+
+<body>
+  <div class="content">
+    
+    
+    <header>
+      <div class="pull-right">
+        [<a href="https:&#x2F;&#x2F;picowso.github.io">homepage</a>]
+        [<a href="https:&#x2F;&#x2F;picowso.github.io">blog</a>]
+        [<a href="https:&#x2F;&#x2F;picowso.github.io/archive">archive</a>]
+        [<a href="https:&#x2F;&#x2F;picowso.github.io/atom.xml">rss</a>]
+        [<a href="">source</a>]
+      </div>
+      <div class="title">
+        <strong>Picowso&#x27;s Blog</strong>
+      </div>
+      <div class="subtitle">A blog about (hobby) chess engines</div>
+    </header>
+    
+
+    <main>
+      
+<article>
+  <div class="headline">
+    <h1>part I: A function chess engine</h1>
+    <div class="border"></div>
+    <time datetime=" 2025-03-01" class="date" itemprop="datePublished">
+      01 Mar 2025
+    </time>
+  </div>
+  <div class="articleBody">
+    <p>Chess programming is a weird subset of general programming, it's where everyone is trying to hyper-optimize every section and making complete rewrites just for a +3 ELO gain, let's make our own but be less radical about it!</p>
+<ul>
+<li>Goals: 2000+, 5M nips</li>
+</ul>
+<h3 id="board-representation">Board Representation</h3>
+<p>The popular "high efficient" representation is <a rel="external" href="https://www.chessprogramming.org/Bitboard">BitBoard</a>, which is basically a normal Piece-centeric board, but uses bitwise tricks to find stuff like attacking squares, which modern computers are super good at, but humans struggle with it a lot since it requires a lot of complex algorithms to function properly, that's why we'll use <a rel="external" href="https://www.chessprogramming.org/0x88">0x88</a> instead, which is basically:</p>
+<pre class="giallo" style="color: #F8F8F2; background-color: #282A36;"><code data-lang="cpp"><span class="giallo-l"><span>Piece[</span><span style="color: #BD93F9;">128</span><span>] Board;</span></span></code></pre>
+<p>it uses the left section as the actual board and the right stays garbage that will allow us later to do some good speedups! also it's more easier to handle than BitBoards, our board will look something like:</p>
+<pre class="giallo" style="color: #F8F8F2; background-color: #282A36;"><code data-lang="cpp"><span class="giallo-l"><span style="color: #FF79C6;">using</span><span style="color: #8BE9FD;font-style: italic;"> u8</span><span style="color: #FF79C6;"> = unsigned char</span><span>;</span><span style="color: #6272A4;"> // BYTE</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">enum</span><span style="color: #8BE9FD;font-style: italic;"> Piece</span><span> :</span><span style="color: #FF79C6;"> u8</span><span> {</span></span>
+<span class="giallo-l"><span>	EMP</span><span style="color: #FF79C6;"> =</span><span style="color: #BD93F9;"> 0</span><span>,</span></span>
+<span class="giallo-l"><span>	P</span><span style="color: #FF79C6;"> =</span><span style="color: #BD93F9;"> 1</span><span>,</span></span>
+<span class="giallo-l"><span>	N</span><span style="color: #FF79C6;"> =</span><span style="color: #BD93F9;"> 2</span><span>,</span></span>
+<span class="giallo-l"><span>	B</span><span style="color: #FF79C6;"> =</span><span style="color: #BD93F9;"> 3</span><span>,</span></span>
+<span class="giallo-l"><span>	R</span><span style="color: #FF79C6;"> =</span><span style="color: #BD93F9;"> 4</span><span>,</span></span>
+<span class="giallo-l"><span>	Q</span><span style="color: #FF79C6;"> =</span><span style="color: #BD93F9;"> 5</span><span>,</span></span>
+<span class="giallo-l"><span>	K</span><span style="color: #FF79C6;"> =</span><span style="color: #BD93F9;"> 6</span><span>,</span></span>
+<span class="giallo-l"><span>};</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF79C6;">using</span><span style="color: #8BE9FD;font-style: italic;"> BBT</span><span style="color: #FF79C6;"> =</span><span style="color: #8BE9FD;font-style: italic;"> Piece</span><span>[</span><span style="color: #BD93F9;">128</span><span>];</span></span></code></pre><h3 id="move-generation">Move Generation</h3>
+<p>In here we want to generate all pseudo-legal moves, which are moves that don't take into account the king being checked after doing the move, in order to make them legal, we can just see if the king is in check after the move</p>
+<p>there is a lot of methods, some are efficient, <a rel="external" href="https://github.com/picowso/BCE/blob/de35361125d51f56229f0cd1977acb1ab8a1b11b/board.cpp">and some are mine</a>, but first let's define a move, i think we can't the debate this:</p>
+<pre class="giallo" style="color: #F8F8F2; background-color: #282A36;"><code data-lang="cpp"><span class="giallo-l"><span style="color: #FF79C6;">struct</span><span style="color: #8BE9FD;font-style: italic;"> CMove</span><span> {</span></span>
+<span class="giallo-l"><span>	u8 from;</span><span style="color: #6272A4;"> // from</span></span>
+<span class="giallo-l"><span>	u8 to;</span><span style="color: #6272A4;"> // to</span></span>
+<span class="giallo-l"><span>	Piece promo;</span><span style="color: #6272A4;"> // piece we&#39;re promoting to (EMP else pawn promotion)</span></span>
+<span class="giallo-l"><span>	u8 flag;</span><span style="color: #6272A4;"> // 1 = en passant, 2 = long castle, 3 = short castle</span></span>
+<span class="giallo-l"><span>};</span></span></code></pre>
+<p>ok now to move generation, notice that we can model all directions using addition and subtraction in 0x88:</p>
+<pre class="giallo" style="color: #F8F8F2; background-color: #282A36;"><code data-lang="cpp"><span class="giallo-l"><span style="color: #6272A4;">// E, W, N, S, NE, NW, SE, SW</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">int</span><span> dirs[</span><span style="color: #BD93F9;">8</span><span>]</span><span style="color: #FF79C6;"> =</span><span> {</span><span style="color: #BD93F9;">1</span><span>,</span><span style="color: #FF79C6;"> -</span><span style="color: #BD93F9;">1</span><span>,</span><span style="color: #BD93F9;"> 16</span><span>,</span><span style="color: #FF79C6;"> -</span><span style="color: #BD93F9;">16</span><span>,</span><span style="color: #BD93F9;"> 17</span><span>,</span><span style="color: #BD93F9;"> 15</span><span>,</span><span style="color: #FF79C6;"> -</span><span style="color: #BD93F9;">15</span><span>,</span><span style="color: #FF79C6;"> -</span><span style="color: #BD93F9;">17</span><span>};</span></span></code></pre>
+<p>next thing we can do is setup up a <code>ray array</code>, which is basically how pieces should move in case they are <code>slidable</code>, like bishop and rook for example, they slide using a ray direction, so we can declare if a piece is slid-able and follow the ray array!</p>
+<pre class="giallo" style="color: #F8F8F2; background-color: #282A36;"><code data-lang="cpp"><span class="giallo-l"><span style="color: #FF79C6;">bool</span><span> slide[</span><span style="color: #BD93F9;">6</span><span>]</span><span style="color: #FF79C6;"> =</span><span> {</span><span style="color: #BD93F9;">0</span><span>,</span><span style="color: #BD93F9;"> 0</span><span>,</span><span style="color: #BD93F9;"> 1</span><span>,</span><span style="color: #BD93F9;"> 1</span><span>,</span><span style="color: #BD93F9;"> 1</span><span>,</span><span style="color: #BD93F9;"> 0</span><span>};</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">int</span><span> ray[</span><span style="color: #BD93F9;">6</span><span>][</span><span style="color: #BD93F9;">8</span><span>]</span><span style="color: #FF79C6;"> =</span><span> {</span></span>
+<span class="giallo-l"><span>	{</span><span style="color: #BD93F9;">   0</span><span>,</span><span style="color: #BD93F9;">   0</span><span>,</span><span style="color: #BD93F9;">  0</span><span>,</span><span style="color: #BD93F9;">  0</span><span>,</span><span style="color: #BD93F9;"> 0</span><span>,</span><span style="color: #BD93F9;">  0</span><span>,</span><span style="color: #BD93F9;">  0</span><span>,</span><span style="color: #BD93F9;">  0</span><span> },</span></span>
+<span class="giallo-l"><span>	{</span><span style="color: #FF79C6;"> -</span><span style="color: #BD93F9;">21</span><span>,</span><span style="color: #FF79C6;"> -</span><span style="color: #BD93F9;">19</span><span>,</span><span style="color: #FF79C6;">-</span><span style="color: #BD93F9;">12</span><span>,</span><span style="color: #FF79C6;"> -</span><span style="color: #BD93F9;">8</span><span>,</span><span style="color: #BD93F9;"> 8</span><span>,</span><span style="color: #BD93F9;"> 12</span><span>,</span><span style="color: #BD93F9;"> 19</span><span>,</span><span style="color: #BD93F9;"> 21</span><span> },</span><span style="color: #6272A4;"> // knight</span></span>
+<span class="giallo-l"><span>	{</span><span style="color: #FF79C6;"> -</span><span style="color: #BD93F9;">11</span><span>,</span><span style="color: #FF79C6;">  -</span><span style="color: #BD93F9;">9</span><span>,</span><span style="color: #BD93F9;">  9</span><span>,</span><span style="color: #BD93F9;"> 11</span><span>,</span><span style="color: #BD93F9;"> 0</span><span>,</span><span style="color: #BD93F9;">  0</span><span>,</span><span style="color: #BD93F9;">  0</span><span>,</span><span style="color: #BD93F9;">  0</span><span> },</span><span style="color: #6272A4;"> // bishop</span></span>
+<span class="giallo-l"><span>	{</span><span style="color: #FF79C6;"> -</span><span style="color: #BD93F9;">10</span><span>,</span><span style="color: #FF79C6;">  -</span><span style="color: #BD93F9;">1</span><span>,</span><span style="color: #BD93F9;">  1</span><span>,</span><span style="color: #BD93F9;"> 10</span><span>,</span><span style="color: #BD93F9;"> 0</span><span>,</span><span style="color: #BD93F9;">  0</span><span>,</span><span style="color: #BD93F9;">  0</span><span>,</span><span style="color: #BD93F9;">  0</span><span> },</span><span style="color: #6272A4;"> // rook</span></span>
+<span class="giallo-l"><span>	{</span><span style="color: #FF79C6;"> -</span><span style="color: #BD93F9;">11</span><span>,</span><span style="color: #FF79C6;"> -</span><span style="color: #BD93F9;">10</span><span>,</span><span style="color: #FF79C6;"> -</span><span style="color: #BD93F9;">9</span><span>,</span><span style="color: #FF79C6;"> -</span><span style="color: #BD93F9;">1</span><span>,</span><span style="color: #BD93F9;"> 1</span><span>,</span><span style="color: #BD93F9;">  9</span><span>,</span><span style="color: #BD93F9;"> 10</span><span>,</span><span style="color: #BD93F9;"> 11</span><span> },</span><span style="color: #6272A4;"> // queen</span></span>
+<span class="giallo-l"><span>	{</span><span style="color: #FF79C6;"> -</span><span style="color: #BD93F9;">11</span><span>,</span><span style="color: #FF79C6;"> -</span><span style="color: #BD93F9;">10</span><span>,</span><span style="color: #FF79C6;"> -</span><span style="color: #BD93F9;">9</span><span>,</span><span style="color: #FF79C6;"> -</span><span style="color: #BD93F9;">1</span><span>,</span><span style="color: #BD93F9;"> 1</span><span>,</span><span style="color: #BD93F9;">  9</span><span>,</span><span style="color: #BD93F9;"> 10</span><span>,</span><span style="color: #BD93F9;"> 11</span><span> }</span><span style="color: #6272A4;">  // king</span></span>
+<span class="giallo-l"><span>};</span></span></code></pre>
+<p>one nice feature about 0x88 is that if <code>pos&amp;0x88 &gt; 0</code> it means that we're in an invalid square due to the nature of the 0x88 board, so our move generation simplifies to a neat ~20 lines function:</p>
+<pre class="giallo" style="color: #F8F8F2; background-color: #282A36;"><code data-lang="cpp"><span class="giallo-l"><span style="color: #FF79C6;">bool</span><span> side;</span><span style="color: #6272A4;"> // which side&#39;s turn</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">int</span><span> rays_s[</span><span style="color: #BD93F9;">6</span><span>]</span><span style="color: #FF79C6;"> =</span><span> {</span><span style="color: #BD93F9;">0</span><span>,</span><span style="color: #BD93F9;"> 8</span><span>,</span><span style="color: #BD93F9;"> 4</span><span>,</span><span style="color: #BD93F9;"> 4</span><span>,</span><span style="color: #BD93F9;"> 8</span><span>,</span><span style="color: #BD93F9;"> 8</span><span>};</span><span style="color: #6272A4;"> // size, slight optimization</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">for</span><span>(</span><span style="color: #FF79C6;">int</span><span> i </span><span style="color: #FF79C6;">=</span><span style="color: #BD93F9;"> 0</span><span> ; i </span><span style="color: #FF79C6;">&lt;</span><span style="color: #BD93F9;"> 128</span><span> ; i</span><span style="color: #FF79C6;">++</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">	if</span><span>(i</span><span style="color: #FF79C6;">&amp;</span><span style="color: #BD93F9;">8</span><span>)</span><span style="color: #FF79C6;"> continue</span><span>;</span></span>
+<span class="giallo-l"><span>	Piece p </span><span style="color: #FF79C6;">=</span><span> Board[i];</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">	if</span><span>(color[i]</span><span style="color: #FF79C6;"> !=</span><span> side)</span><span style="color: #FF79C6;"> continue</span><span>;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">	if</span><span>(p </span><span style="color: #FF79C6;">==</span><span> EMP)</span><span style="color: #FF79C6;"> continue</span><span>;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">	if</span><span>(p </span><span style="color: #FF79C6;">==</span><span> PAWN)</span><span style="color: #FF79C6;"> continue</span><span>;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">	for</span><span>(</span><span style="color: #FF79C6;">int</span><span> j </span><span style="color: #FF79C6;">=</span><span style="color: #BD93F9;"> 0</span><span> ; j </span><span style="color: #FF79C6;">&lt;</span><span> ray_s[p] ; j</span><span style="color: #FF79C6;">++</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">		int</span><span> cur </span><span style="color: #FF79C6;">=</span><span> i;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">		for</span><span>(;;) {</span></span>
+<span class="giallo-l"><span>			cur </span><span style="color: #FF79C6;">+=</span><span> ray[p][j];</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">			if</span><span>(cur </span><span style="color: #FF79C6;">&amp; 0x</span><span style="color: #BD93F9;">88</span><span>)</span><span style="color: #FF79C6;"> break</span><span>;</span><span style="color: #6272A4;"> // outside the board</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">			if</span><span>(Board[cur]</span><span style="color: #FF79C6;"> !=</span><span> EMP) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">				if</span><span>(color[i]</span><span style="color: #FF79C6;"> !=</span><span> color[cur]) {</span></span>
+<span class="giallo-l"><span style="color: #50FA7B;">					AddMove</span><span>(i, cur);</span><span style="color: #6272A4;"> // capture</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">					break</span><span>;</span></span>
+<span class="giallo-l"><span>				}</span></span>
+<span class="giallo-l"><span>			}</span></span>
+<span class="giallo-l"><span>		</span></span>
+<span class="giallo-l"><span style="color: #50FA7B;">			AddMove</span><span>(i, cur);</span><span style="color: #6272A4;"> // quiet move</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">			if</span><span>(</span><span style="color: #FF79C6;">!</span><span>slide[p])</span><span style="color: #FF79C6;"> break</span><span>;</span><span style="color: #6272A4;"> // not slidable</span></span>
+<span class="giallo-l"><span>		}</span></span>
+<span class="giallo-l"><span>	}</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<p>all is left is to handle pawns and castling, which are not that much of a headache! (since castling requires doing checking for check, you are forced to do it outside movegen)</p>
+<h3 id="search">Search</h3>
+<p>we're going to use fans favorite <a rel="external" href="https://www.chessprogramming.org/Minimax">Minimax</a>, there <strong>does</strong> exist other methods, but <em>all</em> of them are incredibly complicated and mostly use Policy NNUEs and Probabilistic methods, which are far from what a toy chess engine should touch.</p>
+<p>the way Minimax works is easy, let's define <em>score</em> as a number that the bigger the better for white and the smaller the better for black, let's say you have a some position as white, then you want to maximize the score, so you take the maximum of the positions you can reach in the recursion, but black must take minimum of the boards he can reach, and the recursion continues until some fixed depth!</p>
+<p align="center">
+<img src="https://i1.wp.com/www.codertime.org/minimax-chess-engine-programming-r/chess_minimax.png?w=450&ssl=1" />
+</p>
+in terms of code it will look something like this:
+<pre class="giallo" style="color: #F8F8F2; background-color: #282A36;"><code data-lang="cpp"><span class="giallo-l"><span style="color: #FF79C6;">int</span><span style="color: #50FA7B;"> minimax</span><span>(</span><span style="color: #FF79C6;">int</span><span style="color: #FFB86C;font-style: italic;"> depth</span><span>,</span><span style="color: #FF79C6;"> bool</span><span style="color: #FFB86C;font-style: italic;"> turn</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    if</span><span> (depth </span><span style="color: #FF79C6;">==</span><span> DEPTH_LIMIT)</span><span style="color: #FF79C6;"> return</span><span style="color: #50FA7B;"> evaluate</span><span>();</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    int</span><span> best_score </span><span style="color: #FF79C6;">=</span><span> INF </span><span style="color: #FF79C6;">*</span><span> (turn </span><span style="color: #FF79C6;">?</span><span style="color: #BD93F9;"> 1</span><span style="color: #FF79C6;"> : -</span><span style="color: #BD93F9;">1</span><span>);</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    for</span><span> (move mv: moves) {</span></span>
+<span class="giallo-l"><span>        score </span><span style="color: #FF79C6;">=</span><span style="color: #50FA7B;"> minimax</span><span>(depth</span><span style="color: #FF79C6;">-</span><span style="color: #BD93F9;">1</span><span>, turn </span><span style="color: #FF79C6;">^</span><span style="color: #BD93F9;"> 1</span><span>);</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">        if</span><span>(turn) best_score </span><span style="color: #FF79C6;">=</span><span style="color: #50FA7B;"> max</span><span>(best, score);</span><span style="color: #6272A4;"> // white</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">        else</span><span> best_score </span><span style="color: #FF79C6;">=</span><span style="color: #50FA7B;"> min</span><span>(best, score);</span><span style="color: #6272A4;"> // black</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"><span>    </span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    return</span><span> max;</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<p>but <strong>wait</strong>, what is <code>evaluate()</code>? it's an approximation of how good a board is for black or white, stockfish uses a complicated NNUE, but we're not complicated to let's instead make our hand-made one!</p>
+<p>first off, who has more pieces should be better, so let's do that!</p>
+<pre class="giallo" style="color: #F8F8F2; background-color: #282A36;"><code data-lang="cpp"><span class="giallo-l"><span style="color: #FF79C6;">int</span><span style="color: #50FA7B;"> evaluate</span><span>(</span><span style="color: #8BE9FD;font-style: italic;">BBT</span><span style="color: #FF79C6;"> &amp;</span><span style="color: #FFB86C;font-style: italic;">Board</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    const int</span><span> Pvals[</span><span style="color: #BD93F9;">13</span><span>]</span><span style="color: #FF79C6;"> =</span><span> {</span><span style="color: #BD93F9;">0</span><span>,</span><span style="color: #BD93F9;"> 10</span><span>,</span><span style="color: #BD93F9;"> 32</span><span>,</span><span style="color: #BD93F9;"> 33</span><span>,</span><span style="color: #BD93F9;"> 50</span><span>,</span><span style="color: #BD93F9;"> 6000</span><span>};</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    int</span><span> score_w </span><span style="color: #FF79C6;">=</span><span style="color: #BD93F9;"> 0</span><span>, score_b </span><span style="color: #FF79C6;">=</span><span style="color: #BD93F9;"> 0</span><span>;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    for</span><span>(</span><span style="color: #FF79C6;">int</span><span> i </span><span style="color: #FF79C6;">=</span><span style="color: #BD93F9;"> 0</span><span> ; i </span><span style="color: #FF79C6;">&lt;</span><span style="color: #BD93F9;"> 128</span><span> ; i</span><span style="color: #FF79C6;">++</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">        if</span><span>(i</span><span style="color: #FF79C6;">&amp;</span><span style="color: #BD93F9;">8</span><span>)</span><span style="color: #FF79C6;"> continue</span><span>;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">        if</span><span>(Board[i]</span><span style="color: #FF79C6;"> ==</span><span> EMP)</span><span style="color: #FF79C6;"> continue</span><span>;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">        if</span><span>(color[i]) score_w </span><span style="color: #FF79C6;">+=</span><span> Pvals[tp];</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">        else</span><span> score_b </span><span style="color: #FF79C6;">+=</span><span> Pvals[tp];</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    return</span><span> score_w </span><span style="color: #FF79C6;">-</span><span> score_b;</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<p>this might be good alone actually, but it doesn't encourage the engine to promote pieces or any good-chess principals, a solution is to reward it also for where the pieces are at, so for example a knight is good in the center while the king should stay in his initial rank, <a rel="external" href="https://www.chessprogramming.org/Simplified_Evaluation_Function">there already exists hand-made</a> functions for this, so we can just use it instead!</p>
+<h3 id="actually-playing-against-it">Actually playing against it</h3>
+<p>what's the point of an engine if we can't play against it? a way to fix this is to make a <em>CLI</em> interface, but that's boring!</p>
+<p>we can instead use <a rel="external" href="https://www.chessprogramming.org/UCI">UCI</a>, which will allow us to play with our engine in <a rel="external" href="https://lichess.org">Lichess</a> using a <a rel="external" href="https://github.com/lichess-bot-devs/lichess-bot">UCI to Lichess gateaway</a>, but now let's implement UCI, it's basically a protocol that allows GUIs to talk with engines so that humans, and other engines, can play against our engine</p>
+<p>details of implementation are boring, if you're nerdy enough go <a rel="external" href="https://gist.github.com/DOBRO/2592c6dad754ba67e6dcaec8c90165bf">read them</a>, i already did so please trust that your GUI will work with only these:</p>
+<pre class="giallo" style="color: #F8F8F2; background-color: #282A36;"><code data-lang="cpp"><span class="giallo-l"><span style="color: #FF79C6;">int</span><span style="color: #50FA7B;"> main</span><span>() {</span></span>
+<span class="giallo-l"><span>    BBT Board;</span></span>
+<span class="giallo-l"><span style="color: #50FA7B;">    build_board</span><span>(Board);</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    for</span><span>(;;) {</span></span>
+<span class="giallo-l"><span>        string inp;</span></span>
+<span class="giallo-l"><span style="color: #50FA7B;">        getline</span><span>(cin, inp);</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">        if</span><span>(inp </span><span style="color: #FF79C6;">==</span><span style="color: #E9F284;"> &quot;</span><span style="color: #F1FA8C;">quit</span><span style="color: #E9F284;">&quot;</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">            return</span><span style="color: #BD93F9;"> 0</span><span>;</span></span>
+<span class="giallo-l"><span>        }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF79C6;">        else if</span><span>(inp </span><span style="color: #FF79C6;">==</span><span style="color: #E9F284;"> &quot;</span><span style="color: #F1FA8C;">uci</span><span style="color: #E9F284;">&quot;</span><span>) {</span></span>
+<span class="giallo-l"><span>            cout </span><span style="color: #FF79C6;">&lt;&lt;</span><span style="color: #E9F284;"> &quot;</span><span style="color: #F1FA8C;">id name BriwatsCE</span><span style="color: #FF79C6;">\n</span><span style="color: #E9F284;">&quot;</span><span>;</span></span>
+<span class="giallo-l"><span>            cout </span><span style="color: #FF79C6;">&lt;&lt;</span><span style="color: #E9F284;"> &quot;</span><span style="color: #F1FA8C;">id author Anass Zakar</span><span style="color: #FF79C6;">\n</span><span style="color: #E9F284;">&quot;</span><span>;</span></span>
+<span class="giallo-l"><span>            cout </span><span style="color: #FF79C6;">&lt;&lt;</span><span style="color: #E9F284;"> &quot;</span><span style="color: #F1FA8C;">uciok</span><span style="color: #FF79C6;">\n</span><span style="color: #E9F284;">&quot;</span><span>;</span></span>
+<span class="giallo-l"><span>            cout </span><span style="color: #FF79C6;">&lt;&lt;</span><span> flush;</span></span>
+<span class="giallo-l"><span>        }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF79C6;">        else if</span><span>(inp </span><span style="color: #FF79C6;">==</span><span style="color: #E9F284;"> &quot;</span><span style="color: #F1FA8C;">isready</span><span style="color: #E9F284;">&quot;</span><span>) {</span></span>
+<span class="giallo-l"><span>            cout </span><span style="color: #FF79C6;">&lt;&lt;</span><span style="color: #E9F284;"> &quot;</span><span style="color: #F1FA8C;">readyok</span><span style="color: #E9F284;">&quot;</span><span style="color: #FF79C6;"> &lt;&lt;</span><span> endl;;</span></span>
+<span class="giallo-l"><span>        }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF79C6;">        else if</span><span>(inp </span><span style="color: #FF79C6;">==</span><span style="color: #E9F284;"> &quot;</span><span style="color: #F1FA8C;">ucinewgame</span><span style="color: #E9F284;">&quot;</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #50FA7B;">            build_board</span><span>(Board);</span></span>
+<span class="giallo-l"><span>        }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF79C6;">        else if</span><span>(inp.</span><span style="color: #50FA7B;">substr</span><span>(</span><span style="color: #BD93F9;">0</span><span>,</span><span style="color: #BD93F9;"> 23</span><span>)</span><span style="color: #FF79C6;"> ==</span><span style="color: #E9F284;"> &quot;</span><span style="color: #F1FA8C;">position startpos moves</span><span style="color: #E9F284;">&quot;</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #6272A4;">            // take last move in inp and do it</span></span>
+<span class="giallo-l"><span style="color: #6272A4;">            // convert from UCI notation to CMove</span></span>
+<span class="giallo-l"><span style="color: #50FA7B;">            domove</span><span>( inp.last );</span></span>
+<span class="giallo-l"><span>        }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF79C6;">        else if</span><span>(inp.</span><span style="color: #50FA7B;">substr</span><span>(</span><span style="color: #BD93F9;">0</span><span>,</span><span style="color: #BD93F9;"> 2</span><span>)</span><span style="color: #FF79C6;"> ==</span><span style="color: #E9F284;"> &quot;</span><span style="color: #F1FA8C;">go</span><span style="color: #E9F284;">&quot;</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #6272A4;">            // return move in UCI notation</span></span>
+<span class="giallo-l"><span>            cout </span><span style="color: #FF79C6;">&lt;&lt;</span><span style="color: #50FA7B;"> minimax</span><span>(Board)</span><span style="color: #FF79C6;"> &lt;&lt;</span><span> flush;</span></span>
+<span class="giallo-l"><span style="color: #50FA7B;">            domove</span><span>(</span><span style="color: #50FA7B;"> minimax</span><span>(Board) );</span></span>
+<span class="giallo-l"><span>        }</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<p>and that's it Folks! here is a game the engine and itself: (its so smart ik)
+<img src="https://images.chesscomfiles.com/uploads/game-gifs/90px/green/neo/0/cc/0/0/abc5987c4456a9048d63b2f332fdebe89de826cb3f91faee348719a2ca270b55.gif" alt="it&#39;s done" /></p>
+
+  </div>
+</article>
+
+    </main>
+  </div>
+
+  <footer>
+    
+    <p>CCL <a href="https:&#x2F;&#x2F;picowso.github.io">Anass Zakar</a> &mdash; <a
+        href="mailto:"></a> | Powered by <a
+        href="https://www.getzola.org/">Zola</a> and the <a href="https://git.sr.ht/~savoy/tilde">tilde</a> theme</p>
+    
+  </footer>
+
+  
+</body>
+
+
+</html>
