@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="description" content="A blog about (hobby) chess engines">
+  
+
+  <title> Picowso&#x27;s Blog </title>
+
+  
+  <link rel="stylesheet" href="https://picowso.github.io/theme.css">
+  
+  
+</head>
+
+<body>
+  <div class="content">
+    
+    
+    <header>
+      <div class="pull-right">
+        [<a href="https:&#x2F;&#x2F;picowso.github.io">homepage</a>]
+        [<a href="https:&#x2F;&#x2F;picowso.github.io">blog</a>]
+        [<a href="https:&#x2F;&#x2F;picowso.github.io/archive">archive</a>]
+        [<a href="https:&#x2F;&#x2F;picowso.github.io/atom.xml">rss</a>]
+        [<a href="">source</a>]
+      </div>
+      <div class="title">
+        <strong>Picowso&#x27;s Blog</strong>
+      </div>
+      <div class="subtitle">A blog about (hobby) chess engines</div>
+    </header>
+    
+
+    <main>
+      
+<article>
+  <div class="headline">
+    <h1>part II: Alpha-Beta pruning rabbit hole</h1>
+    <div class="border"></div>
+    <time datetime=" 2025-03-01" class="date" itemprop="datePublished">
+      01 Mar 2025
+    </time>
+  </div>
+  <div class="articleBody">
+    <p>Minimax alone is insanely inefficient, just fully traversing depth 5 from initial chess position would take about 5M node traversed, we can reduce this down to an insane 100K using Alpha-Beta and Killer heuristic and IID</p>
+<h3 id="alpha-beta-what-s-that">Alpha-Beta? What's that?</h3>
+<p>i fear im a horrible teacher for such a new concept, i suggest you watch this video, it really made me understand it! it's easy don't get scared!</p>
+<h3 id="quiescence-search-stop-making-stupid-moves">Quiescence Search: Stop making stupid moves!</h3>
+<p>there is a thing called <a rel="external" href="https://www.chessprogramming.org/Horizon_Effect">Horizon Effect</a>, which is basically that, in a fixed depth, evaluation functions might consider a really bad board in 1 or 2 moves as an alright or even good one!</p>
+<center><img src="https://img.itch.zone/aW1nLzEzODQyNjIucG5n/original/VKim%2FV.png" /></center>
+<p>to fix this, we can use <a rel="external" href="https://www.chessprogramming.org/Quiescence_Search">Quiescence Search</a>, it's basically traversing the nodes <strong>while</strong> there is a capturing move, this stops the engine from making stupid moves but it's kinda costly, so you can perhaps ignore pawn captures, it depends on how much are you willing to pay for a non-stupid engine!</p>
+<pre class="giallo" style="color: #F8F8F2; background-color: #282A36;"><code data-lang="cpp"><span class="giallo-l"><span style="color: #FF79C6;">int</span><span style="color: #50FA7B;"> quiescence</span><span>(</span><span style="color: #FF79C6;">bool</span><span style="color: #FFB86C;font-style: italic;"> turn</span><span>,</span><span style="color: #FF79C6;"> int</span><span style="color: #FFB86C;font-style: italic;"> alpha</span><span>,</span><span style="color: #FF79C6;"> int</span><span style="color: #FFB86C;font-style: italic;"> beta</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">	int</span><span> bs </span><span style="color: #FF79C6;">=</span><span style="color: #50FA7B;"> evaluate</span><span>();</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">	if</span><span>(turn) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">		if</span><span>(bs </span><span style="color: #FF79C6;">&gt;=</span><span> beta)</span><span style="color: #FF79C6;"> return</span><span> beta;</span></span>
+<span class="giallo-l"><span>		alpha </span><span style="color: #FF79C6;">=</span><span style="color: #50FA7B;"> max</span><span>(alpha, bs);</span></span>
+<span class="giallo-l"><span>	}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF79C6;">	else</span><span> {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">		if</span><span>(bs </span><span style="color: #FF79C6;">&lt;=</span><span> alpha)</span><span style="color: #FF79C6;"> return</span><span> alpha;</span></span>
+<span class="giallo-l"><span>		beta </span><span style="color: #FF79C6;">=</span><span style="color: #50FA7B;"> min</span><span>(beta, bs);</span></span>
+<span class="giallo-l"><span>	}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #50FA7B;">	movegen</span><span>(turn);</span></span>
+<span class="giallo-l"><span>	vector</span><span style="color: #FF79C6;">&lt;</span><span>CMove</span><span style="color: #FF79C6;">&gt;</span><span style="color: #50FA7B;"> local</span><span>(Moves, Moves </span><span style="color: #FF79C6;">+</span><span> mvs);</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">	for</span><span>(</span><span style="color: #FF79C6;">int</span><span> i </span><span style="color: #FF79C6;">=</span><span style="color: #BD93F9;"> 0</span><span> ; i </span><span style="color: #FF79C6;">&lt;</span><span> local.</span><span style="color: #50FA7B;">size</span><span>() ; i</span><span style="color: #FF79C6;">++</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">		if</span><span>(local[i].capture</span><span style="color: #FF79C6;"> ==</span><span> EMP)</span><span style="color: #FF79C6;"> continue</span><span>;</span></span>
+<span class="giallo-l"><span style="color: #50FA7B;">		domove</span><span>(local[i],</span><span style="color: #BD93F9;"> 1</span><span>);</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">		int</span><span> ls </span><span style="color: #FF79C6;">=</span><span style="color: #50FA7B;"> quiescence</span><span>(turn</span><span style="color: #FF79C6;">^</span><span style="color: #BD93F9;">1</span><span>, alpha, beta);</span></span>
+<span class="giallo-l"><span style="color: #50FA7B;">		undomove</span><span>();</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">		if</span><span>(turn) {</span></span>
+<span class="giallo-l"><span>			alpha </span><span style="color: #FF79C6;">=</span><span style="color: #50FA7B;"> max</span><span>(alpha, ls);</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">			if</span><span>(alpha </span><span style="color: #FF79C6;">&gt;=</span><span> beta)</span><span style="color: #FF79C6;"> return</span><span> alpha;</span></span>
+<span class="giallo-l"><span>		}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF79C6;">		else</span><span> {</span></span>
+<span class="giallo-l"><span>			beta </span><span style="color: #FF79C6;">=</span><span style="color: #50FA7B;"> min</span><span>(beta, ls);</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">			if</span><span>(beta </span><span style="color: #FF79C6;">&lt;=</span><span> alpha)</span><span style="color: #FF79C6;"> return</span><span> beta;</span></span>
+<span class="giallo-l"><span>		}</span></span>
+<span class="giallo-l"><span>	}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF79C6;">	return</span><span> bs;</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre><h3 id="move-ordering">Move ordering</h3>
+<p>when doing Alpha-Beta notice that the better the first move the more likely it is for a alpha/beta-cutoff, so if we can <strong>attempt</strong> to sort the moves from best to worst, we'll have more chances for an earlier alpha-beta cutoff</p>
+<p>there exists a lot of <em>Move ordering</em> heuristics, but since we're not making the next stockfish we can use something simple like <a rel="external" href="https://www.chessprogramming.org/MVV-LVA">MVV-LVA</a>, which basically sorting by capturing value, it makes sense that capturing a queen is better than moving a pawn! there exists other ones such as <a rel="external" href="https://www.chessprogramming.org/Killer_Heuristic">Killer</a>, <em>MVV-LVA</em> would look something like:</p>
+<pre class="giallo" style="color: #F8F8F2; background-color: #282A36;"><code data-lang="cpp"><span class="giallo-l"><span>std</span><span style="color: #FF79C6;">::</span><span style="color: #50FA7B;">sort</span><span>(local.</span><span style="color: #50FA7B;">rbegin</span><span>(), local.</span><span style="color: #50FA7B;">rend</span><span>(), [</span><span style="color: #FF79C6;">&amp;</span><span>](</span><span style="color: #8BE9FD;font-style: italic;">CMove</span><span style="color: #FFB86C;font-style: italic;"> a</span><span>,</span><span style="color: #8BE9FD;font-style: italic;"> CMove</span><span style="color: #FFB86C;font-style: italic;"> b</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">	return</span><span> val[a.capture]</span><span style="color: #FF79C6;"> &lt;</span><span> val[b.capture];</span></span>
+<span class="giallo-l"><span>});</span></span></code></pre>
+<p>Killer move is also widely used</p>
+
+  </div>
+</article>
+
+    </main>
+  </div>
+
+  <footer>
+    
+    <p>CCL <a href="https:&#x2F;&#x2F;picowso.github.io">Anass Zakar</a> &mdash; <a
+        href="mailto:"></a> | Powered by <a
+        href="https://www.getzola.org/">Zola</a> and the <a href="https://git.sr.ht/~savoy/tilde">tilde</a> theme</p>
+    
+  </footer>
+
+  
+</body>
+
+
+</html>

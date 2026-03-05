@@ -114,7 +114,9 @@
 <span class="giallo-l"><span>		}</span></span>
 <span class="giallo-l"><span>	}</span></span>
 <span class="giallo-l"><span>}</span></span></code></pre>
-<p>all is left is to handle pawns and castling, which are not that much of a headache! (since castling requires doing checking for check, you are forced to do it outside movegen)</p>
+<p>all is left is to handle pawns and castling, which are not that much of a headache! (small note: <em>since castling requires checking for a check, you kinda are forced to do it outside movegen</em>)</p>
+<p>also you're forced to implement <a rel="external" href="https://www.chessprogramming.org/Zobrist_Hashing">Zobrist Hashing</a> in order to draw in case of Three-fold repetition, and also there is some cool stuff we can do with it!</p>
+<p>for check you can exploit the fact that we can reverse the roles, so let the king be a queen, if it touches the opponent's queen then he's in check! you can do this for all pieces except pawn, easy edge case!</p>
 <h3 id="search">Search</h3>
 <p>we're going to use fans favorite <a rel="external" href="https://www.chessprogramming.org/Minimax">Minimax</a>, there <strong>does</strong> exist other methods, but <em>all</em> of them are incredibly complicated and mostly use Policy NNUEs and Probabilistic methods, which are far from what a toy chess engine should touch.</p>
 <p>the way Minimax works is easy, let's define <em>score</em> as a number that the bigger the better for white and the smaller the better for black, let's say you have a some position as white, then you want to maximize the score, so you take the maximum of the positions you can reach in the recursion, but black must take minimum of the boards he can reach, and the recursion continues until some fixed depth!</p>
@@ -190,7 +192,7 @@ in terms of code it will look something like this:
 <span class="giallo-l"><span>        }</span></span>
 <span class="giallo-l"><span>    }</span></span>
 <span class="giallo-l"><span>}</span></span></code></pre>
-<p>and that's it Folks! here is a game the engine and itself: (its so smart ik)
+<p>and that's it Folks! here is a game between the engine and itself: (its so smart ik)
 <img src="https://images.chesscomfiles.com/uploads/game-gifs/90px/green/neo/0/cc/0/0/abc5987c4456a9048d63b2f332fdebe89de826cb3f91faee348719a2ca270b55.gif" alt="it&#39;s done" /></p>
 
   </div>
