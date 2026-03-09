@@ -40,14 +40,15 @@
       
 <article>
   <div class="headline">
-    <h1>part II: Alpha-Beta pruning rabbit hole</h1>
+    <h1>part II: Making it better</h1>
     <div class="border"></div>
     <time datetime=" 2025-03-01" class="date" itemprop="datePublished">
       01 Mar 2025
     </time>
   </div>
   <div class="articleBody">
-    <p>Minimax alone is insanely inefficient, just fully traversing depth 5 from initial chess position would take about 5M node traversed, we can reduce this down to an insane 100K using Alpha-Beta and Killer heuristic and IID</p>
+    <p>What can we do to improve the engine we made in the last blog, the most obvious thing we can improve is search, there exists a lot of searching algorithms out there, but generally <em>Minimax</em> is the tea of the discussion, tho using it alone is insanely inefficient, just fully traversing depth 5 from initial chess position would take about 5M nodes, we can reduce this down to an insanely low 100K using Alpha-Beta method and others like <strong>MTD(f)</strong></p>
+<p>Also our engine should get a sense of how much time is left and make decisions based on that, also we'll make lots of other stuff to enhance our engine!</p>
 <h3 id="alpha-beta-what-s-that">Alpha-Beta? What's that?</h3>
 <p>i fear im a horrible teacher for such a new concept, i suggest you <a rel="external" href="https://www.youtube.com/watch?v=zp3VMe0Jpf8&amp;t=10s&amp;pp=ygUHbWluaW1heA%3D%3D">watch this</a> video, it really made me understand it! it's easy don't get scared!</p>
 <h3 id="quiescence-search-stop-making-stupid-moves">Quiescence Search: Stop making stupid moves!</h3>
@@ -92,7 +93,127 @@
 <span class="giallo-l"><span style="color: #FF79C6;">	return</span><span> val[a.capture]</span><span style="color: #FF79C6;"> &lt;</span><span> val[b.capture];</span></span>
 <span class="giallo-l"><span>});</span></span></code></pre>
 <p>Killer move is also widely used</p>
-
+<h3 id="iterative-deepening">Iterative deepening</h3>
+<p>This is basically doing BFS in the search tree while actually doing DFS, the idea is basically to do a fixed depth Minimax each time while increasing depth limit, until we pass some time or some depth perhaps.</p>
+<p>The reason why this is not insanely slow is since, on average, we have that $\text{nodes at depth n} = 25 \times \text{nodes at depth n-1}$ so this stays at a time complexity of $O(b^n)$ same as normal Minimax.</p>
+<p>And the reason why someone might want to do this is since engines have to worry about time too, you shouldn't traverse 30s worth of nodes while you have 10s on the clock, but it introduces a challenge of time management that we didn't worry about before, when should an engine spend time?</p>
+<h3 id="time-management">Time management</h3>
+<p>This is a question of "how much time should my engine spend in this position considering the time he still has"</p>
+<p>The straight-forward strategy is to just take expected number of moves in a chess game (<em>should be around 31</em>) and spend $\text{time left} / \text{expected}$ per move, but this is not good! some boards require more thinking than other, generally the middle game does require more time than the endgame.</p>
+<p>One strategy, which is the one i'll be using, is to consider a variable $stab$, how much time the best move changes during Iterative deepening, if the engine is so sure about a move, $stab$ should be $0$ or $1$, and there is no point in searching further depths if the engine is so sure (right?)</p>
+<p>so the formula would be: $$\text{time} = \min(\text{game mode max},\text{stab} + \text{time left} / \text{expected}, \text{time left})$$
+and we'll only move to the next depth during <em>Iterative deepening</em> if $$\text{time sum from last depths} \times 33 \le \text{time}$$
+for 33 being the average growth factor, this is a claim i've made (this time strategy isn't supposed to be good, this is my blog after all i can write wtv)</p>
+<center><img src="https://www.chessprogramming.org/images/a/a6/GrandmasterThinkingTime.jpg" /></center>
+<h3 id="fen-reading">FEN reading!</h3>
+<p><a rel="external" href="https://www.chessprogramming.org/Forsyth-Edwards_Notation">FEN</a> is basically a file format that describes a board in a pseudo compressed way, we'll really need it later on in part 3 when training our MLP! (spoilers!)</p>
+<p>implementing FEN get's tedious, it's long and goofy, i'll let you have the piece placement part, tho you must implement the other sections for a correct board representation (shouldn't be hard!):</p>
+<pre class="giallo" style="color: #F8F8F2; background-color: #282A36;"><code data-lang="cpp"><span class="giallo-l"><span style="color: #FF79C6;">int</span><span> u </span><span style="color: #FF79C6;">=</span><span style="color: #BD93F9;"> 0</span><span>, i </span><span style="color: #FF79C6;">=</span><span style="color: #BD93F9;"> 0</span><span>, c </span><span style="color: #FF79C6;">=</span><span style="color: #BD93F9;"> 1</span><span>;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">for</span><span>(; i </span><span style="color: #FF79C6;">&lt;</span><span> str.</span><span style="color: #50FA7B;">size</span><span>() ; i</span><span style="color: #FF79C6;">++</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    if</span><span>(str[i]</span><span style="color: #FF79C6;"> ==</span><span style="color: #E9F284;"> &#39; &#39;</span><span>)</span><span style="color: #FF79C6;"> break</span><span>;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    if</span><span>(str[i]</span><span style="color: #FF79C6;"> ==</span><span style="color: #E9F284;"> &#39;</span><span style="color: #F1FA8C;">/</span><span style="color: #E9F284;">&#39;</span><span>) {</span></span>
+<span class="giallo-l"><span>        u </span><span style="color: #FF79C6;">=</span><span> c </span><span style="color: #FF79C6;">&lt;&lt;</span><span style="color: #BD93F9;"> 4</span><span>;</span></span>
+<span class="giallo-l"><span>        c</span><span style="color: #FF79C6;">++</span><span>;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">        continue</span><span>;</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    if</span><span>(</span><span style="color: #E9F284;">&#39;</span><span style="color: #F1FA8C;">0</span><span style="color: #E9F284;">&#39;</span><span style="color: #FF79C6;"> &lt;=</span><span> str[i]</span><span style="color: #FF79C6;"> and</span><span> str[i]</span><span style="color: #FF79C6;"> &lt;=</span><span style="color: #E9F284;"> &#39;</span><span style="color: #F1FA8C;">9</span><span style="color: #E9F284;">&#39;</span><span>) {</span></span>
+<span class="giallo-l"><span>        u </span><span style="color: #FF79C6;">+=</span><span> str[i]</span><span style="color: #FF79C6;"> -</span><span style="color: #E9F284;"> &#39;</span><span style="color: #F1FA8C;">0</span><span style="color: #E9F284;">&#39;</span><span>;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">        continue</span><span>;</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span>    cout </span><span style="color: #FF79C6;">&lt;&lt;</span><span> u </span><span style="color: #FF79C6;">&lt;&lt;</span><span> endl;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    if</span><span>(str[i]</span><span style="color: #FF79C6;"> ==</span><span style="color: #E9F284;"> &#39;</span><span style="color: #F1FA8C;">p</span><span style="color: #E9F284;">&#39;</span><span>) Board[u]</span><span style="color: #FF79C6;"> =</span><span> BP;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    else if</span><span>(str[i]</span><span style="color: #FF79C6;"> ==</span><span style="color: #E9F284;"> &#39;</span><span style="color: #F1FA8C;">n</span><span style="color: #E9F284;">&#39;</span><span>) Board[u]</span><span style="color: #FF79C6;"> =</span><span> BN;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    else if</span><span>(str[i]</span><span style="color: #FF79C6;"> ==</span><span style="color: #E9F284;"> &#39;</span><span style="color: #F1FA8C;">b</span><span style="color: #E9F284;">&#39;</span><span>) Board[u]</span><span style="color: #FF79C6;"> =</span><span> BB;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    else if</span><span>(str[i]</span><span style="color: #FF79C6;"> ==</span><span style="color: #E9F284;"> &#39;</span><span style="color: #F1FA8C;">r</span><span style="color: #E9F284;">&#39;</span><span>) Board[u]</span><span style="color: #FF79C6;"> =</span><span> BR;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    else if</span><span>(str[i]</span><span style="color: #FF79C6;"> ==</span><span style="color: #E9F284;"> &#39;</span><span style="color: #F1FA8C;">q</span><span style="color: #E9F284;">&#39;</span><span>) Board[u]</span><span style="color: #FF79C6;"> =</span><span> BQ;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    else if</span><span>(str[i]</span><span style="color: #FF79C6;"> ==</span><span style="color: #E9F284;"> &#39;</span><span style="color: #F1FA8C;">k</span><span style="color: #E9F284;">&#39;</span><span>) Board[u]</span><span style="color: #FF79C6;"> =</span><span> BK;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    else if</span><span>(str[i]</span><span style="color: #FF79C6;"> ==</span><span style="color: #E9F284;"> &#39;</span><span style="color: #F1FA8C;">P</span><span style="color: #E9F284;">&#39;</span><span>) Board[u]</span><span style="color: #FF79C6;"> =</span><span> WP;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    else if</span><span>(str[i]</span><span style="color: #FF79C6;"> ==</span><span style="color: #E9F284;"> &#39;</span><span style="color: #F1FA8C;">N</span><span style="color: #E9F284;">&#39;</span><span>) Board[u]</span><span style="color: #FF79C6;"> =</span><span> WN;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    else if</span><span>(str[i]</span><span style="color: #FF79C6;"> ==</span><span style="color: #E9F284;"> &#39;</span><span style="color: #F1FA8C;">B</span><span style="color: #E9F284;">&#39;</span><span>) Board[u]</span><span style="color: #FF79C6;"> =</span><span> WB;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    else if</span><span>(str[i]</span><span style="color: #FF79C6;"> ==</span><span style="color: #E9F284;"> &#39;</span><span style="color: #F1FA8C;">R</span><span style="color: #E9F284;">&#39;</span><span>) Board[u]</span><span style="color: #FF79C6;"> =</span><span> WR;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    else if</span><span>(str[i]</span><span style="color: #FF79C6;"> ==</span><span style="color: #E9F284;"> &#39;</span><span style="color: #F1FA8C;">Q</span><span style="color: #E9F284;">&#39;</span><span>) Board[u]</span><span style="color: #FF79C6;"> =</span><span> WQ;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    else if</span><span>(str[i]</span><span style="color: #FF79C6;"> ==</span><span style="color: #E9F284;"> &#39;</span><span style="color: #F1FA8C;">K</span><span style="color: #E9F284;">&#39;</span><span>) Board[u]</span><span style="color: #FF79C6;"> =</span><span> WK;</span></span>
+<span class="giallo-l"><span>    u</span><span style="color: #FF79C6;">++</span><span>;</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre><h3 id="transposition-table">Transposition table</h3>
+<p>One should notice that during our search, we traverse the same Board a lot of times, if we could've store these boards instead we could improve the speed of the search by a huge factor.</p>
+<p>notice that during <em>Alpha-Beta Minimax</em> there are 3 ways to return a result:</p>
+<ul>
+<li>returning exact result</li>
+<li>returning an upper bound (beta cut-off)</li>
+<li>returning a lower bound (alpha cut-off)
+so we can store these three cases, and yea! i believe this code is readable enough to speak before me:</li>
+</ul>
+<pre class="giallo" style="color: #F8F8F2; background-color: #282A36;"><code data-lang="cpp"><span class="giallo-l"><span style="color: #6272A4;">// transposition table</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">enum</span><span style="color: #8BE9FD;font-style: italic;"> NType</span><span> {</span></span>
+<span class="giallo-l"><span>	EXACT</span><span style="color: #FF79C6;"> =</span><span style="color: #BD93F9;"> 0</span><span>,</span></span>
+<span class="giallo-l"><span>	LOWER</span><span style="color: #FF79C6;"> =</span><span style="color: #BD93F9;"> 1</span><span>,</span></span>
+<span class="giallo-l"><span>	UPPER</span><span style="color: #FF79C6;"> =</span><span style="color: #BD93F9;"> 2</span></span>
+<span class="giallo-l"><span>};</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF79C6;">struct</span><span style="color: #8BE9FD;font-style: italic;"> TB</span><span> {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">	int</span><span> depth;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">	int</span><span> val;</span></span>
+<span class="giallo-l"><span>	CMove BMove;</span></span>
+<span class="giallo-l"><span>	NType flag;</span></span>
+<span class="giallo-l"><span>};</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span>gp_hash_table</span><span style="color: #FF79C6;">&lt;</span><span>u64, TB</span><span style="color: #FF79C6;">&gt;</span><span> ttable;</span></span>
+<span class="giallo-l"><span style="color: #6272A4;">// retrieving ttable info</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">bool</span><span style="color: #50FA7B;"> retrieve_tb</span><span>(</span><span style="color: #8BE9FD;font-style: italic;">u64</span><span style="color: #FFB86C;font-style: italic;"> key</span><span>,</span><span style="color: #FF79C6;"> int</span><span style="color: #FFB86C;font-style: italic;"> depth</span><span>,</span><span style="color: #FF79C6;"> int</span><span style="color: #FFB86C;font-style: italic;"> alpha</span><span>,</span><span style="color: #FF79C6;"> int</span><span style="color: #FFB86C;font-style: italic;"> beta</span><span>,</span><span style="color: #FF79C6;"> int &amp;</span><span style="color: #FFB86C;font-style: italic;">act_s</span><span>,</span><span style="color: #8BE9FD;font-style: italic;"> CMove</span><span style="color: #FF79C6;"> &amp;</span><span style="color: #FFB86C;font-style: italic;">act_m</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    auto</span><span> it </span><span style="color: #FF79C6;">=</span><span> ttable.</span><span style="color: #50FA7B;">find</span><span>(key);</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    if</span><span>(it </span><span style="color: #FF79C6;">==</span><span> ttable.</span><span style="color: #50FA7B;">end</span><span>())</span><span style="color: #FF79C6;"> return</span><span style="color: #BD93F9;"> 0</span><span>;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    const</span><span> TB </span><span style="color: #FF79C6;">&amp;</span><span>e </span><span style="color: #FF79C6;">=</span><span> it</span><span style="color: #FF79C6;">-&gt;</span><span>second;</span></span>
+<span class="giallo-l"><span>    act_m </span><span style="color: #FF79C6;">=</span><span> e.BMove;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #6272A4;">    // flight</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    if</span><span>(e.depth</span><span style="color: #FF79C6;"> &lt;</span><span> depth)</span><span style="color: #FF79C6;"> return</span><span style="color: #BD93F9;"> 0</span><span>;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    int</span><span> val </span><span style="color: #FF79C6;">=</span><span> e.val;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    if</span><span>(e.flag</span><span style="color: #FF79C6;"> ==</span><span> EXACT) {</span></span>
+<span class="giallo-l"><span>    	act_s </span><span style="color: #FF79C6;">=</span><span> val;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    	return</span><span style="color: #BD93F9;"> 1</span><span>;</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    if</span><span>(e.flag</span><span style="color: #FF79C6;"> ==</span><span> LOWER) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    	if</span><span> (val </span><span style="color: #FF79C6;">&gt;=</span><span> beta) {</span></span>
+<span class="giallo-l"><span>    		act_s </span><span style="color: #FF79C6;">=</span><span> val;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    		return</span><span style="color: #BD93F9;"> 1</span><span>;</span></span>
+<span class="giallo-l"><span>    	}</span></span>
+<span class="giallo-l"><span>	}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    if</span><span>(e.flag</span><span style="color: #FF79C6;"> ==</span><span> UPPER) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    	if</span><span>(val </span><span style="color: #FF79C6;">&lt;=</span><span> alpha) {</span></span>
+<span class="giallo-l"><span>    		act_s </span><span style="color: #FF79C6;">=</span><span> val;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    		return</span><span style="color: #BD93F9;"> 1</span><span>;</span></span>
+<span class="giallo-l"><span>    	}</span></span>
+<span class="giallo-l"><span>    }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    return</span><span style="color: #BD93F9;"> 0</span><span>;</span></span>
+<span class="giallo-l"><span>}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF79C6;">void</span><span style="color: #50FA7B;"> set_tb</span><span>(</span><span style="color: #8BE9FD;font-style: italic;">u64</span><span style="color: #FFB86C;font-style: italic;"> key</span><span>,</span><span style="color: #FF79C6;"> int</span><span style="color: #FFB86C;font-style: italic;"> score</span><span>,</span><span style="color: #FF79C6;"> int</span><span style="color: #FFB86C;font-style: italic;"> depth</span><span>,</span><span style="color: #8BE9FD;font-style: italic;"> NType</span><span style="color: #FFB86C;font-style: italic;"> flag</span><span>,</span><span style="color: #8BE9FD;font-style: italic;"> CMove</span><span style="color: #FFB86C;font-style: italic;"> Bm</span><span>) {</span></span>
+<span class="giallo-l"><span>    TB e;</span></span>
+<span class="giallo-l"><span>    e.val</span><span style="color: #FF79C6;"> =</span><span> score;</span></span>
+<span class="giallo-l"><span>    e.depth</span><span style="color: #FF79C6;"> =</span><span> depth;</span></span>
+<span class="giallo-l"><span>    e.flag</span><span style="color: #FF79C6;">  =</span><span> flag;</span></span>
+<span class="giallo-l"><span>    e.BMove</span><span style="color: #FF79C6;"> =</span><span> Bm;</span></span>
+<span class="giallo-l"><span>    ttable[key]</span><span style="color: #FF79C6;"> =</span><span> e;</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre><h3 id="mtd-f-binary-search">MTD(f): binary search!</h3>
+<p>binary searching on "is the score of minimax $\ge T$"! it's a really nice idea that can be fast when done right, but i guess i didn't do it right since it seems slower than normal Minimax LOL, either ways in code it should look something like this (aka like a binary search):</p>
+<pre class="giallo" style="color: #F8F8F2; background-color: #282A36;"><code data-lang="cpp"><span class="giallo-l"><span style="color: #6272A4;">// f: first guess</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">int</span><span style="color: #50FA7B;"> mtdf</span><span>(</span><span style="color: #FF79C6;">bool</span><span style="color: #FFB86C;font-style: italic;"> turn</span><span>,</span><span style="color: #FF79C6;"> int</span><span style="color: #FFB86C;font-style: italic;"> f</span><span>,</span><span style="color: #FF79C6;"> int</span><span style="color: #FFB86C;font-style: italic;"> depth</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">	int</span><span> l </span><span style="color: #FF79C6;">= -</span><span>INF;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">	int</span><span> r </span><span style="color: #FF79C6;">=</span><span> INF;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">	while</span><span>(l </span><span style="color: #FF79C6;">&lt;</span><span> r) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">		int</span><span> beta </span><span style="color: #FF79C6;">=</span><span> f </span><span style="color: #FF79C6;">+</span><span> (f </span><span style="color: #FF79C6;">==</span><span> l);</span></span>
+<span class="giallo-l"><span>		f </span><span style="color: #FF79C6;">=</span><span style="color: #50FA7B;"> minimax</span><span>(depth, depth, turn, beta</span><span style="color: #FF79C6;">-</span><span style="color: #BD93F9;">1</span><span>, beta);</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">		if</span><span>(f </span><span style="color: #FF79C6;">&lt;</span><span> beta) r </span><span style="color: #FF79C6;">=</span><span> f;</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">		else</span><span> l </span><span style="color: #FF79C6;">=</span><span> f;</span></span>
+<span class="giallo-l"><span>	};</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF79C6;">	return</span><span> f;</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
   </div>
 </article>
 
