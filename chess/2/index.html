@@ -42,12 +42,20 @@
   <div class="headline">
     <h1>part II: Making it better</h1>
     <div class="border"></div>
-    <time datetime=" 2025-03-01" class="date" itemprop="datePublished">
-      01 Mar 2025
+    <time datetime=" 2025-03-09" class="date" itemprop="datePublished">
+      09 Mar 2025
     </time>
   </div>
   <div class="articleBody">
-    <p>What can we do to improve the engine we made in the last blog, the most obvious thing we can improve is search, there exists a lot of searching algorithms out there, but generally <em>Minimax</em> is the tea of the discussion, tho using it alone is insanely inefficient, just fully traversing depth 5 from initial chess position would take about 5M nodes, we can reduce this down to an insanely low 100K using Alpha-Beta method and others like <strong>MTD(f)</strong></p>
+    <script>
+MathJax = {
+  tex: {
+    inlineMath: {'[+]': [['$', '$']]}
+  }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js"></script>
+<p>What can we do to improve the engine we made in the last blog, the most obvious thing we can improve is search, there exists a lot of searching algorithms out there, but generally <em>Minimax</em> is the tea of the discussion, tho using it alone is insanely inefficient, just fully traversing depth 5 from initial chess position would take about 5M nodes, we can reduce this down to an insanely low 100K using Alpha-Beta method and others like <strong>MTD(f)</strong></p>
 <p>Also our engine should get a sense of how much time is left and make decisions based on that, also we'll make lots of other stuff to enhance our engine!</p>
 <h3 id="alpha-beta-what-s-that">Alpha-Beta? What's that?</h3>
 <p>i fear im a horrible teacher for such a new concept, i suggest you <a rel="external" href="https://www.youtube.com/watch?v=zp3VMe0Jpf8&amp;t=10s&amp;pp=ygUHbWluaW1heA%3D%3D">watch this</a> video, it really made me understand it! it's easy don't get scared!</p>
