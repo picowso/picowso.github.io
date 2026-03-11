@@ -64,9 +64,9 @@ MathJax = {
 $$L = (y - e)^2$$
 where $y$ is the result given by our network by feed-forwarding, and $e$ is what we expected, we have that where $\sigma(x)$ is an activation function:
 $$y = \sigma(out_b + \sum_{i = 0}^{\text{HL2 size}} out_w \times HL2[i])$$
-and we have that
-$$HL2[i] = \sigma(HL2[i]<em>b + \sum</em>{j=0}^{\text{HL1 size}} HL1[j] \times HL2[i]_w) \newline HL1[j] = \sigma(HL1[j]<em>b + \sum</em>{k=0}^{\text{input size}} input[k] \times HL1[j]_w)$$
-so if we can find partial derivative in respect to weights and biases of $L$ we can just do <a rel="external" href="https://en.wikipedia.org/wiki/Gradient_descent">gradient descent</a>, so let's get in the rabbit hole of finding the (partial) derivative!</p>
+and we have that</p>
+<p>$$HL2[i] = \sigma(HL2[i]<em>b + \sum</em>{j=0}^{\text{HL1 size}} HL1[j] \times HL2[i]_w) \newline HL1[j] = \sigma(HL1[j]<em>b + \sum</em>{k=0}^{\text{input size}} input[k] \times HL1[j]_w)$$</p>
+<p>so if we can find partial derivative in respect to weights and biases of $L$ we can just do <a rel="external" href="https://en.wikipedia.org/wiki/Gradient_descent">gradient descent</a>, so let's get in the rabbit hole of finding the (partial) derivative!</p>
 <p>let's try to find it for some values (yes, by hand!): $$\frac{dL}{dout_b} = \frac{dL}{dy}\frac{dy}{dout_b} = \frac{1}{2} (2y - 2e) \times 1 = y-e$$</p>
 
   </div>
@@ -78,11 +78,9 @@ so if we can find partial derivative in respect to weights and biases of $L$ we 
   <footer>
     
     <p>CC <a href="https:&#x2F;&#x2F;briwats.com">Anass Zakar</a> &mdash; <a
-        href="mailto:"></a> | Powered by <a
-        href="https://www.getzola.org/">Zola</a> and the <a href="https://git.sr.ht/~savoy/tilde">tilde</a> theme</p>
     
   </footer>
-
+  
   
 </body>
 
