@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-        <loc>https://picowso.github.io/</loc>
+        <loc>https://briwats.com/</loc>
     </url>
     <url>
-        <loc>https://picowso.github.io/archive/</loc>
+        <loc>https://briwats.com/archive/</loc>
     </url>
     <url>
-        <loc>https://picowso.github.io/chess/</loc>
+        <loc>https://briwats.com/chess/</loc>
     </url>
     <url>
-        <loc>https://picowso.github.io/chess/1/</loc>
+        <loc>https://briwats.com/chess/1/</loc>
         <lastmod>2025-03-01</lastmod>
     </url>
     <url>
-        <loc>https://picowso.github.io/chess/2/</loc>
+        <loc>https://briwats.com/chess/2/</loc>
         <lastmod>2025-03-09</lastmod>
     </url>
     <url>
-        <loc>https://picowso.github.io/chess/3/</loc>
+        <loc>https://briwats.com/chess/3/</loc>
         <lastmod>2025-03-12</lastmod>
     </url>
 </urlset>
