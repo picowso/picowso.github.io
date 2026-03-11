@@ -59,13 +59,15 @@ MathJax = {
 <h2 id="mlps">MLPs?</h2>
 <p><a rel="external" href="https://en.wikipedia.org/wiki/Multilayer_perceptron">Multi-Layer Perceptrons</a> is usually the first thing one gets introduced to in deep learning, it's the most fundamental NN one can get exposed to after the Perceptron, i suggest watching <a rel="external" href="https://www.youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi">3b1b's really awesome deep learning series!</a> before continue-ing on reading this article!</p>
 <h3 id="back-propagation">Back-propagation</h3>
-<blockquote>
-<p>im writing this section mostly for myself since i got kinda confused.</p>
-</blockquote>
-<p>let's fix out MLP to only have 2 hidden layers of arbitrary size, let's define an error $L$ as $$L = (y - e)^2$$
-where $y$ is the result given by our network by feed-forwarding, and $e$ is what we expected, we have that where $\sigma(x)$ is an activation function: $$y = \sigma(out_b + \sum_{i = 0}^{\text{HL2 size}} out_w \times HL2[i])$$
-and we have that $$HL2[i] = \sigma(HL2[i]<em>b + \sum</em>{j=0}^{\text{HL1 size}} HL1[j] \times HL2[i]_w)$$
-and also: $$HL1[j] = \sigma(HL1[j]<em>b + \sum</em>{k=0}^{\text{input size}} input[k] \times HL1[j]_w)$$
+<p><strong>im writing this section mostly for myself since i got kinda confused.</strong></p>
+<p>let's fix out MLP to only have 2 hidden layers of arbitrary size, let's define an error $L$ as
+$$L = (y - e)^2$$
+where $y$ is the result given by our network by feed-forwarding, and $e$ is what we expected, we have that where $\sigma(x)$ is an activation function:
+$$y = \sigma(out_b + \sum_{i = 0}^{\text{HL2 size}} out_w \times HL2[i])$$
+and we have that
+$$HL2[i] = \sigma(HL2[i]<em>b + \sum</em>{j=0}^{\text{HL1 size}} HL1[j] \times HL2[i]_w)$$
+and also:
+$$HL1[j] = \sigma(HL1[j]<em>b + \sum</em>{k=0}^{\text{input size}} input[k] \times HL1[j]_w)$$
 so if we can find partial derivative in respect to weights and biases of $L$ we can just do <a rel="external" href="https://en.wikipedia.org/wiki/Gradient_descent">gradient descent</a>, so let's get in the rabbit hole of finding the (partial) derivative!</p>
 <p>let's try to find it for some values (yes, by hand!): $$\frac{dL}{dout_b} = \frac{dL}{dy}\frac{dy}{dout_b} = \frac{1}{2} (2y - 2e) \times 1 = y-e$$</p>
 
