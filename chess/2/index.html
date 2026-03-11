@@ -208,7 +208,7 @@ so we can store these three cases, and yea! i believe this code is readable enou
 <span class="giallo-l"><span>    e.BMove</span><span style="color: #FF79C6;"> =</span><span> Bm;</span></span>
 <span class="giallo-l"><span>    ttable[key]</span><span style="color: #FF79C6;"> =</span><span> e;</span></span>
 <span class="giallo-l"><span>}</span></span></code></pre><h3 id="mtd-f-binary-search">MTD(f): binary search!</h3>
-<p>binary searching on "is the score of minimax $\ge T$"! it's a really nice idea that can be fast when done right, but i guess i didn't do it right since it seems slower than normal Minimax LOL, either ways in code it should look something like this (aka like a binary search):</p>
+<p><em>MTF(f)</em> is an algorithm made in the late 1990s, the idea is to basically binary search on "is the score of minimax $\ge T$"! it's really nice and can be fast when done right, in code it should look something like this:</p>
 <pre class="giallo" style="color: #F8F8F2; background-color: #282A36;"><code data-lang="cpp"><span class="giallo-l"><span style="color: #6272A4;">// f: first guess</span></span>
 <span class="giallo-l"><span style="color: #FF79C6;">int</span><span style="color: #50FA7B;"> mtdf</span><span>(</span><span style="color: #FF79C6;">bool</span><span style="color: #FFB86C;font-style: italic;"> turn</span><span>,</span><span style="color: #FF79C6;"> int</span><span style="color: #FFB86C;font-style: italic;"> f</span><span>,</span><span style="color: #FF79C6;"> int</span><span style="color: #FFB86C;font-style: italic;"> depth</span><span>) {</span></span>
 <span class="giallo-l"><span style="color: #FF79C6;">	int</span><span> l </span><span style="color: #FF79C6;">= -</span><span>INF;</span></span>
@@ -222,6 +222,8 @@ so we can store these three cases, and yea! i believe this code is readable enou
 <span class="giallo-l"></span>
 <span class="giallo-l"><span style="color: #FF79C6;">	return</span><span> f;</span></span>
 <span class="giallo-l"><span>}</span></span></code></pre>
+<p>for a more formal discussion about it <a href="https://picowso.github.io/chess/2/people.csail.mit.edu/plaat/mtdf.html">check this article</a></p>
+
   </div>
 </article>
 
