@@ -49,19 +49,23 @@
   <div class="articleBody">
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
 <p>NNUEs are an edit made to Multi-Layer Perceptrons that makes them very efficient and usable as an evaluation function for chess engines, NNUEs are quite recent (introduced in 2018) and using them alongside 0x88 and MTD(f) is quite funny if you ask me! basically honda civic with a jet engine basically</p>
-<h2 id="mlps">MLPs?</h2>
+<h2 id="mlps-backpropagation">MLPs? Backpropagation?</h2>
 <p><a rel="external" href="https://en.wikipedia.org/wiki/Multilayer_perceptron">Multi-Layer Perceptrons</a> is usually the first thing one gets introduced to in deep learning, it's the most fundamental NN one can get exposed to after the Perceptron, i suggest watching <a rel="external" href="https://www.youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi">3b1b's really awesome deep learning series!</a> before continue-ing on reading this article!</p>
-<h3 id="back-propagation">Back-propagation</h3>
-<p><strong>im writing this section mostly for myself since i got kinda confused.</strong></p>
-<p>let's fix out MLP to only have 2 hidden layers of arbitrary size, let's define an error $L$ as
-$$L = (y - e)^2$$
-where $y$ is the result given by our network by feed-forwarding, and $e$ is what we expected, we have that where $\sigma(x)$ is an activation function:
-$$y = \sigma(out_b + \sum_{i = 0}^{\text{HL2 size}} out_w \times HL2[i])$$
-and we have that</p>
-<p>$HL2[i] = \sigma(HL2[i]<em>b + \sum</em>{j=0}^{\text{HL1 size}} HL1[j] \times HL2[i]_w)$
-$HL1[j] = \sigma(HL1[j]<em>b + \sum</em>{k=0}^{\text{input size}} input[k] \times HL1[j]_w)$</p>
-<p>so if we can find partial derivative in respect to weights and biases of $L$ we can just do <a rel="external" href="https://en.wikipedia.org/wiki/Gradient_descent">gradient descent</a>, so let's get in the rabbit hole of finding the (partial) derivative!</p>
-<p>let's try to find it for some values (yes, by hand!): $$\frac{dL}{dout_b} = \frac{dL}{dy}\frac{dy}{dout_b} = \frac{1}{2} (2y - 2e) \times 1 \times \sigma'(out_b) = (y-e) \times \sigma'(out_b)$$</p>
+<h3 id="nnue">NNUE?!</h3>
+<p>NNUEs are just MLPs, but edited in a way that is efficient for chess engines, for our version we'll only have <strong>one hidden layer</strong>, keep in mind that engines like Stockfish uses 3 hidden layers, but the implementation details of Stockfish's NNUE are far more than what im willing to spend time comprehending :P</p>
+<p>Since we're trying to make an NNU(Efficient) the input layer</p>
+<p>The first optimization we can use are accumulators, which are basically an optimization on the <em>first hidden layer</em>, basically instead of doing the $786 \times 128$ operations each time, we can take advantage of the fact that the difference in number of changed squares after a move in chess is kinda small, so we add/remove that instead in each changed position!</p>
+<pre class="giallo" style="color: #F8F8F2; background-color: #282A36;"><code data-lang="cpp"><span class="giallo-l"><span style="color: #6272A4;">// we update all the accumulators.</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">void</span><span style="color: #50FA7B;"> add</span><span>(</span><span style="color: #FF79C6;">int</span><span style="color: #FFB86C;font-style: italic;"> ind</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">	for</span><span>(</span><span style="color: #FF79C6;">int</span><span> i </span><span style="color: #FF79C6;">=</span><span style="color: #BD93F9;"> 0</span><span> ; i </span><span style="color: #FF79C6;">&lt;</span><span style="color: #BD93F9;"> 128</span><span> ; i</span><span style="color: #FF79C6;">++</span><span>) acc[i]</span><span style="color: #FF79C6;"> +=</span><span> hidden_w[i][ind];</span></span>
+<span class="giallo-l"><span>}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF79C6;">void</span><span style="color: #50FA7B;"> rem</span><span>(</span><span style="color: #FF79C6;">int</span><span style="color: #FFB86C;font-style: italic;"> ind</span><span>) {</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">	for</span><span>(</span><span style="color: #FF79C6;">int</span><span> i </span><span style="color: #FF79C6;">=</span><span style="color: #BD93F9;"> 0</span><span> ; i </span><span style="color: #FF79C6;">&lt;</span><span style="color: #BD93F9;"> 128</span><span> ; i</span><span style="color: #FF79C6;">++</span><span>) acc[i]</span><span style="color: #FF79C6;"> +=</span><span> hidden_w[i][ind];</span></span>
+<span class="giallo-l"><span>}</span></span></code></pre>
+<p>we also update in our <code>make/unmake</code> function in alpha-beta.</p>
+<p>NOTICE THAT WE NEED TWO ACCUMULATORS, since our MLP only was trained on only white's position, so we need to make a copy where black is white and where white is... white, so that we can have correct evaluation for both in the NNUE.</p>
+<p>[to be continued]</p>
 
   </div>
 </article>
