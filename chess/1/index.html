@@ -52,9 +52,9 @@
 <li>Goals: 2000+, 5M nips</li>
 </ul>
 <h3 id="board-representation">Board Representation</h3>
-<p>The popular "high efficient" representation is <a rel="external" href="https://www.chessprogramming.org/Bitboard">BitBoard</a>, which is basically a normal Piece-centeric board, but uses bitwise tricks to find stuff like attacking squares, which modern computers are super good at, but humans struggle with it a lot since it requires a lot of complex algorithms to function properly, that's why we'll use <a rel="external" href="https://www.chessprogramming.org/0x88">0x88</a> instead, which is basically:</p>
+<p>The popular "cutting-edge" representation is <a rel="external" href="https://www.chessprogramming.org/Bitboard">BitBoard</a>, which is basically a normal Piece-centeric board, but uses bitwise tricks to find stuff like attacking squares, which modern computers are super good at, but humans like me struggle with it a lot since it requires a lot of complex algorithms to function properly, and also because it is generally annoying! that's why we'll use <a rel="external" href="https://www.chessprogramming.org/0x88">0x88</a> instead, which is basically:</p>
 <pre class="giallo" style="color: #F8F8F2; background-color: #282A36;"><code data-lang="cpp"><span class="giallo-l"><span>Piece[</span><span style="color: #BD93F9;">128</span><span>] Board;</span></span></code></pre>
-<p>it uses the left section as the actual board and the right stays garbage that will allow us later to do some good speedups! also it's more easier to handle than BitBoards, our board will look something like:</p>
+<p>it uses the left section as the actual board and the right stays garbage that will allow us later to do some good speedups! also it's way more easier to handle than BitBoards, our board will look something like:</p>
 <pre class="giallo" style="color: #F8F8F2; background-color: #282A36;"><code data-lang="cpp"><span class="giallo-l"><span style="color: #FF79C6;">using</span><span style="color: #8BE9FD;font-style: italic;"> u8</span><span style="color: #FF79C6;"> = unsigned char</span><span>;</span><span style="color: #6272A4;"> // BYTE</span></span>
 <span class="giallo-l"><span style="color: #FF79C6;">enum</span><span style="color: #8BE9FD;font-style: italic;"> Piece</span><span> :</span><span style="color: #FF79C6;"> u8</span><span> {</span></span>
 <span class="giallo-l"><span>	EMP</span><span style="color: #FF79C6;"> =</span><span style="color: #BD93F9;"> 0</span><span>,</span></span>
@@ -115,7 +115,7 @@
 <span class="giallo-l"><span>	}</span></span>
 <span class="giallo-l"><span>}</span></span></code></pre>
 <p>all is left is to handle pawns and castling, which are not that much of a headache! (small note: <em>since castling requires checking for a check, you kinda are forced to do it outside movegen</em>)</p>
-<p>also you're forced to implement <a rel="external" href="https://www.chessprogramming.org/Zobrist_Hashing">Zobrist Hashing</a> in order to draw in case of Three-fold repetition, and also there is some cool stuff we can do with it!</p>
+<p>also you're forced to implement <a rel="external" href="https://www.chessprogramming.org/Zobrist_Hashing">Zobrist Hashing</a> in order to draw in case of Three-fold repetition, and also there is some cool stuff we can do with it like transposition tables, which we'll get to soon!</p>
 <p>for check you can exploit the fact that we can reverse the roles, so let the king be a queen, if it touches the opponent's queen then he's in check! you can do this for all pieces except pawn, easy edge case!</p>
 <h3 id="search">Search</h3>
 <p>we're going to use fans favorite <a rel="external" href="https://www.chessprogramming.org/Minimax">Minimax</a>, there <strong>does</strong> exist other methods, but <em>all</em> of them are incredibly complicated and mostly use Policy NNUEs and Probabilistic methods, which are far from what a toy chess engine should touch.</p>
@@ -149,7 +149,7 @@ in terms of code it will look something like this:
 <span class="giallo-l"></span>
 <span class="giallo-l"><span style="color: #FF79C6;">    return</span><span> score_w </span><span style="color: #FF79C6;">-</span><span> score_b;</span></span>
 <span class="giallo-l"><span>}</span></span></code></pre>
-<p>this might be good alone actually, but it doesn't encourage the engine to promote pieces or any good-chess principals, a solution is to reward it also for where the pieces are at, so for example a knight is good in the center while the king should stay in his initial rank, <a rel="external" href="https://www.chessprogramming.org/Simplified_Evaluation_Function">there already exists hand-made</a> functions for this, so we can just use it instead!</p>
+<p>this might be good alone actually, but it doesn't encourage the engine to protect the king or any good chess principals, a solution is to reward it also for where the pieces are at, so for example a knight is good in the center while the king should stay in his initial rank, <a rel="external" href="https://www.chessprogramming.org/Simplified_Evaluation_Function">there already exists hand-made</a> functions for this, so we can just use it instead!</p>
 <h3 id="actually-playing-against-it">Actually playing against it</h3>
 <p>what's the point of an engine if we can't play against it? a way to fix this is to make a <em>CLI</em> interface, but that's boring!</p>
 <p>we can instead use <a rel="external" href="https://www.chessprogramming.org/UCI">UCI</a>, which will allow us to play with our engine in <a rel="external" href="https://lichess.org">Lichess</a> using a <a rel="external" href="https://github.com/lichess-bot-devs/lichess-bot">UCI to Lichess gateaway</a>, but now let's implement UCI, it's basically a protocol that allows GUIs to talk with engines so that humans, and other engines, can play against our engine</p>
@@ -192,7 +192,7 @@ in terms of code it will look something like this:
 <span class="giallo-l"><span>        }</span></span>
 <span class="giallo-l"><span>    }</span></span>
 <span class="giallo-l"><span>}</span></span></code></pre>
-<p>and that's it Folks! here is a game between the engine and itself: (its so smart ik)
+<p>and that's it Folks! here is a game between the engine and itself: (its really stupid for now, but soon that'll change!)
 <img src="https://images.chesscomfiles.com/uploads/game-gifs/90px/green/neo/0/cc/0/0/abc5987c4456a9048d63b2f332fdebe89de826cb3f91faee348719a2ca270b55.gif" alt="it&#39;s done" /></p>
 
   </div>

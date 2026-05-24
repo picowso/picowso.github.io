@@ -64,7 +64,7 @@
 <span class="giallo-l"><span style="color: #FF79C6;">	for</span><span>(</span><span style="color: #FF79C6;">int</span><span> i </span><span style="color: #FF79C6;">=</span><span style="color: #BD93F9;"> 0</span><span> ; i </span><span style="color: #FF79C6;">&lt;</span><span style="color: #BD93F9;"> 128</span><span> ; i</span><span style="color: #FF79C6;">++</span><span>) acc[i]</span><span style="color: #FF79C6;"> +=</span><span> hidden_w[i][ind];</span></span>
 <span class="giallo-l"><span>}</span></span></code></pre>
 <p>we also update in our <code>make/unmake</code> function in alpha-beta.</p>
-<p>NOTICE THAT WE NEED TWO ACCUMULATORS, since our MLP only was trained on only white's position, so we need to make a copy where black is white and where white is... white, so that we can have correct evaluation for both in the NNUE.</p>
+<p><strong>NOTICE THAT WE NEED TWO ACCUMULATORS</strong>, since our MLP only was trained on only white's position, so we need to make a copy where black is white and where white is... white, so that we can have correct evaluation for both in the NNUE.</p>
 <p>[to be continued]</p>
 
   </div>
