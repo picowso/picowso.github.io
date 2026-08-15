@@ -21,4 +21,11 @@
         <loc>https://blog.briwats.com/chess/3/</loc>
         <lastmod>2025-03-12</lastmod>
     </url>
+    <url>
+        <loc>https://blog.briwats.com/ctfs/</loc>
+    </url>
+    <url>
+        <loc>https://blog.briwats.com/ctfs/rsa/</loc>
+        <lastmod>2025-03-01</lastmod>
+    </url>
 </urlset>
