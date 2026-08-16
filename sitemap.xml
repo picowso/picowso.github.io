@@ -25,7 +25,23 @@
         <loc>https://blog.briwats.com/ctfs/</loc>
     </url>
     <url>
+        <loc>https://blog.briwats.com/ctfs/boneh-durfee/</loc>
+        <lastmod>2026-08-17</lastmod>
+    </url>
+    <url>
+        <loc>https://blog.briwats.com/ctfs/coppersmith/</loc>
+        <lastmod>2026-08-17</lastmod>
+    </url>
+    <url>
+        <loc>https://blog.briwats.com/ctfs/roca/</loc>
+        <lastmod>2026-08-17</lastmod>
+    </url>
+    <url>
         <loc>https://blog.briwats.com/ctfs/rsa/</loc>
-        <lastmod>2026-08-15</lastmod>
+        <lastmod>2026-08-17</lastmod>
+    </url>
+    <url>
+        <loc>https://blog.briwats.com/ctfs/wiener/</loc>
+        <lastmod>2026-08-17</lastmod>
     </url>
 </urlset>
