@@ -55,6 +55,53 @@ MathJax = {
 };
 </script>
 <script defer src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js"></script>
+<p>in a <em>secure</em> RSA implementation we usually fix the public exponent $e$ to be some odd value, usually $3$ or $2^{16} + 1$, and we compute $d$ such that $ed \equiv 1 \mod \phi$, this implies that $d$ would be 'big' compared to $e$, but what if instead of this, we fixed $d$ first and then computed $e$, for example in this python code:</p>
+<pre class="giallo" style="color: #F8F8F2; background-color: #282A36;"><code data-lang="python"><span class="giallo-l"><span style="color: #6272A4;">#!/usr/bin/env python3</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF79C6;">from</span><span> Crypto.Util.number</span><span style="color: #FF79C6;"> import</span><span> getPrime, bytes_to_long</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #BD93F9;">FLAG</span><span style="color: #FF79C6;"> = b</span><span style="color: #E9F284;">&quot;</span><span style="color: #F1FA8C;">crypto{?????????????????????????}</span><span style="color: #E9F284;">&quot;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span>m</span><span style="color: #FF79C6;"> =</span><span> bytes_to_long(</span><span style="color: #BD93F9;">FLAG</span><span>)</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #FF79C6;">def</span><span style="color: #50FA7B;"> get_huge_RSA</span><span>():</span></span>
+<span class="giallo-l"><span>    p</span><span style="color: #FF79C6;"> =</span><span> getPrime(</span><span style="color: #BD93F9;">1024</span><span>)</span></span>
+<span class="giallo-l"><span>    q</span><span style="color: #FF79C6;"> =</span><span> getPrime(</span><span style="color: #BD93F9;">1024</span><span>)</span></span>
+<span class="giallo-l"><span>    N</span><span style="color: #FF79C6;"> =</span><span> p</span><span style="color: #FF79C6;">*</span><span>q</span></span>
+<span class="giallo-l"><span>    phi</span><span style="color: #FF79C6;"> =</span><span> (p</span><span style="color: #FF79C6;">-</span><span style="color: #BD93F9;">1</span><span>)</span><span style="color: #FF79C6;">*</span><span>(q</span><span style="color: #FF79C6;">-</span><span style="color: #BD93F9;">1</span><span>)</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    while</span><span style="color: #BD93F9;"> True</span><span>:</span></span>
+<span class="giallo-l"><span>        d</span><span style="color: #FF79C6;"> =</span><span> getPrime(</span><span style="color: #BD93F9;">256</span><span>)</span></span>
+<span class="giallo-l"><span>        e</span><span style="color: #FF79C6;"> =</span><span style="color: #8BE9FD;"> pow</span><span>(d,</span><span style="color: #FF79C6;">-</span><span style="color: #BD93F9;">1</span><span>,phi)</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">        if</span><span> e.bit_length()</span><span style="color: #FF79C6;"> ==</span><span> N.bit_length():</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">            break</span></span>
+<span class="giallo-l"><span style="color: #FF79C6;">    return</span><span> N,e</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span>N, e</span><span style="color: #FF79C6;"> =</span><span> get_huge_RSA()</span></span>
+<span class="giallo-l"><span>c</span><span style="color: #FF79C6;"> =</span><span style="color: #8BE9FD;"> pow</span><span>(m, e, N)</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span style="color: #8BE9FD;">print</span><span>(</span><span style="color: #FF79C6;">f</span><span style="color: #F1FA8C;">&#39;N = </span><span style="color: #BD93F9;">{</span><span style="color: #8BE9FD;">hex</span><span>(N)</span><span style="color: #BD93F9;">}</span><span style="color: #F1FA8C;">&#39;</span><span>)</span></span>
+<span class="giallo-l"><span style="color: #8BE9FD;">print</span><span>(</span><span style="color: #FF79C6;">f</span><span style="color: #F1FA8C;">&#39;e = </span><span style="color: #BD93F9;">{</span><span style="color: #8BE9FD;">hex</span><span>(e)</span><span style="color: #BD93F9;">}</span><span style="color: #F1FA8C;">&#39;</span><span>)</span></span>
+<span class="giallo-l"><span style="color: #8BE9FD;">print</span><span>(</span><span style="color: #FF79C6;">f</span><span style="color: #F1FA8C;">&#39;c = </span><span style="color: #BD93F9;">{</span><span style="color: #8BE9FD;">hex</span><span>(c)</span><span style="color: #BD93F9;">}</span><span style="color: #F1FA8C;">&#39;</span><span>)</span></span></code></pre>
+<p>first thing we notice in this code is that $d \le N^{\frac{1}{8}}$ and how unusually close value of $e$ is to $N$, It turns out this code is crackable[^1] using Wiener's attack! Wiener's attack states that:</p>
+<blockquote>
+<p><strong>Wiener's Theorem</strong>:
+In an RSA cryptosystem, if we know that $d &lt; \frac{1}{3} N^{\frac{1}{3}}$ then we can efficiently retrieve $d$ only using $(N, e)$</p>
+</blockquote>
+<p>Let's define 'efficiently' as running under 1 second in any modern computer, the method we'll state has a complexity $O(\log N)$ which should satisfy that even for RSA-4096</p>
+<p>Wiener's attack relies mainly on "Legendre's theorem" which states that:</p>
+<blockquote>
+<p><strong>Legendre's Theorem</strong>:
+every fraction $\frac{p}{q}$ such that $p$ and $q$ are coprime which satisfies the inequality $|\alpha−\frac{p}{q}|&lt;​\frac{1}{2q^2}$ is convergent to $\alpha$, in other words $\frac{p}{q}$ exists in the continued fraction of $\alpha$.</p>
+</blockquote>
+<p>This is a really powerful claim, enough of the bargling and let's get into the math now!</p>
+<p>by definition we have $$ed \equiv 1 \mod \phi$$$$\implies ed - 1 = k\phi$$
+for some $k \in \mathbb{Z}$, now divide both sides by $d\phi$: $$\frac{e}{\phi} - \frac{1}{d\phi} = \frac{k}{d} \implies \Big| \frac{e}{\phi} - \frac{k}{d} \Big| = \frac{1}{d\phi}$$
+we have $p+q-1 &lt; 3\sqrt{N}$ hence $| N - \phi | &lt; 3\sqrt{N}$, notice that t'ill now we dont know $phi$, so let's take $N \cong \phi$: $$\Big| \frac{e}{N} - \frac{k}{d} \Big| = \Big| \frac{ed - k\phi - kN+k\phi}{Nd} \Big| = \Big| \frac{1 - k(N - \phi)}{Nd} \Big| &lt; \frac{3k}{d\sqrt{N}}$$
+and since we have $k &lt; d &lt; \frac{1}{3}N^{1/4}$: $$\frac{3k}{d\sqrt{N}} &lt; \frac{1}{dN^{\frac{1}{4}}} &lt; \frac{1}{2d^2}$$
+since $2d &lt; N^{\frac{1}{4}}$ implies $\frac{1}{2d} &gt; \frac{1}{N^{\frac{1}{4}}}$, and by <strong>Legendre's Theorem</strong>, it's satisfactory to find the continued fraction of $\frac{e}{N}$ and do a check if $d$ works or not.</p>
+<p>This completes the proof of Wiener's attack, now let's get to implementation!</p>
+
   </div>
 </article>
 
